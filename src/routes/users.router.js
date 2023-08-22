@@ -16,7 +16,7 @@ usersRouter.post('/login', (req, res, next) => {
 
     req.logIn(user, function(err) {
       if (err) { return next(err); }
-      res.redirect('/');
+      res.redirect('/posts');
     })
   })(req, res, next)
 })
@@ -42,7 +42,7 @@ usersRouter.post('/signup', async (req, res) => {
     // user 컬렉션에 유저를 저장합니다.
     await user.save();
     // 이메일 보내기
-    sendMail('nchq2123@naver.com', '노창훈', 'welcome');
+    // sendMail('nchq2123@naver.com', '노창훈', 'welcome');
 
     res.redirect('/login');
   } catch (error) {
@@ -53,7 +53,7 @@ usersRouter.post('/signup', async (req, res) => {
 usersRouter.get('/google', passport.authenticate('google'));
 
 usersRouter.get('/google/callback', passport.authenticate('google', {
-  successReturnToOrRedirect: '/',
+  successReturnToOrRedirect: '/posts',
   failureRedirect: '/login'
 }))
 

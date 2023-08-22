@@ -4,11 +4,19 @@ const { default: mongoose } = require('mongoose');
 const passport = require('passport');
 const app = express();
 const path = require('path');
+const flash = require('connect-flash');
+const methodOverride = require('method-override');
 
 const config = require('config');
+const serverConfig = config.get('server');
+
 const mainRouter = require('./routes/main.router');
 const usersRouter = require('./routes/users.router');
-const serverConfig = config.get('server');
+const postsRouter = require('./routes/posts.router');
+const commentsRouter = require('./routes/comments.router');
+const profileRouter = require('./routes/profile.router');
+const likesRouter = require('./routes/likes.router');
+const friendsRouter = require('./routes/friends.router');
 
 const port = serverConfig.port;
 
@@ -41,18 +49,49 @@ require('./config/passport');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use(flash());
+app.use(methodOverride('_method'));
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {console.log('mongodb connected')})
   .catch((err) => {console.log(err)});
 
-app.use('/static', express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// app.get('/send', (req, res) => {
+//   req.flash('post success', '포스트가 생성되었습니다.');
+//   req.flash('post failed', '포스트 생성이 실패했습니다.');
+//   res.redirect('/receive');
+// })
+
+// app.get('/receive', (req, res) => {
+//   res.send(req.flash('post success')[0]);
+// })
+
+app.use((req, res, next) => {
+  res.locals.error = req.flash('error');
+  res.locals.success = req.flash('success');
+  res.locals.currentUser = req.user;
+  next();
+})
 
 app.use('/', mainRouter);
 app.use('/auth', usersRouter);
+app.use('/posts', postsRouter);
+app.use('/posts/:id/comments', commentsRouter);
+app.use(likesRouter);
+app.use('/profile/:id', profileRouter);
+app.use('/friends', friendsRouter);
+
+app.use((err, req, res, next) => {
+  res.status(err.status || 500);
+  res.send(err.message || "Error Occurred");
+})
 
 app.listen(port, () => {
   console.log(`Listening on ${port}`);
